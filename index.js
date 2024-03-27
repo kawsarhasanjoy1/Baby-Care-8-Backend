@@ -32,7 +32,23 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     app.get("/products", async (req, res) => {
-      const result = await productsCollection.find().toArray();
+      const queryUrl = req.query;
+      let modifyQuery = {};
+      if (queryUrl.category) {
+        modifyQuery.category = queryUrl.category;
+      }
+      if (queryUrl.rating) {
+        modifyQuery.rating = { $gte: Number(queryUrl.rating) };
+      }
+      if (queryUrl.price) {
+        modifyQuery.price = {
+          $lte: Number(queryUrl.price),
+        };
+      }
+
+      console.log(modifyQuery);
+
+      const result = await productsCollection.find(modifyQuery).toArray();
       res.send(result);
     });
 
@@ -43,6 +59,14 @@ async function run() {
       res.send(result);
     });
 
+    // app.get(`/products`, async (req, res) => {
+    //   const category = req.params.category;
+    //   console.log(req.params)
+    //   const query = { category: category };
+    //   const result = await productsCollection.find(query).toArray();
+    //   res.send(result);
+    // });
+
     app.get("/flash-sale", async (req, res) => {
       const falseSale = await productsCollection
         .find()
@@ -51,13 +75,6 @@ async function run() {
 
       const filter = falseSale.filter((flash) => flash.isFlash == true);
       res.send(filter);
-    });
-
-    app.get("/brands/:category", async (req, res) => {
-      const category = req.params.category;
-      const query = { category: category };
-      const result = await productsCollection.find(query).toArray();
-      res.send(result);
     });
 
     await client.db("admin").command({ ping: 1 });
